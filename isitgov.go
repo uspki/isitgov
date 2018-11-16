@@ -35,23 +35,24 @@ type registration struct {
 }
 
 var regs = make(map[string]registration)
-var initialized bool
 
 func main() {
-	initialized = false
 	url := "https://raw.githubusercontent.com/GSA/data/master/dotgov-domains/current-full.csv"
 
-	regs = processCSV(fetchList(url))
-
-	if len(regs) != 0 {
-		initialized = true
-	}
+	go pollDotGov(url)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/registrations", getRegs).Methods("GET")
 	router.HandleFunc("/registrations/{domain}", getRegDomain).Methods("GET")
 	router.HandleFunc("/isStateLocal/{domain}", isStateLocal).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func pollDotGov(url string) {
+	for {
+		regs = processCSV(fetchList(url))
+		time.Sleep(24 * 14 * time.Hour)
+	}
 }
 
 func fetchList(url string) string {
