@@ -5,7 +5,6 @@
 *                    service.  Registrations are updated every 14 days,
 *                    coinciding with the registrations being updated.
 *
-* License:           GPLv2
 ******************************************************************************/
 
 package main
@@ -36,11 +35,17 @@ type registration struct {
 
 var regs = make(map[string]registration)
 
+//timers for book keeping only - will be replaced by prometheus hooks
+var lastUpdate = time.Time{}
+var nextUpdate = time.Time{}
+
 func main() {
 	url := "https://raw.githubusercontent.com/GSA/data/master/dotgov-domains/current-full.csv"
 
+	//run goroutine to poll and process registrations every 14 days
 	go pollDotGov(url)
 
+	//set up REST endpoints
 	router := mux.NewRouter()
 	router.HandleFunc("/registrations", getRegs).Methods("GET")
 	router.HandleFunc("/registrations/{domain}", getRegDomain).Methods("GET")
@@ -51,6 +56,8 @@ func main() {
 func pollDotGov(url string) {
 	for {
 		regs = processCSV(fetchList(url))
+		lastUpdate = time.Now()
+		nextUpdate = lastUpdate.AddDate(0, 0, 14)
 		time.Sleep(24 * 14 * time.Hour)
 	}
 }
@@ -81,6 +88,14 @@ func processCSV(file string) map[string]registration {
 
 	for i := 1; i < len(lines); i++ {
 		reg := strings.Split(lines[i], ",")
+		var regUpdate = time.Time{}
+
+		//check if we've seen this registration before and if so retain the CreatedDate
+		if regs[reg[0]].CreatedDate.IsZero() {
+			regUpdate = time.Now()
+		} else {
+			regUpdate = regs[reg[0]].CreatedDate
+		}
 
 		//most organizations aren't compounds
 		if len(reg) == 6 {
@@ -92,7 +107,7 @@ func processCSV(file string) map[string]registration {
 				string(reg[4]),
 				string(reg[5]),
 				string(reg[2]) == "Non-Federal Agency",
-				time.Now(),
+				regUpdate,
 				time.Now(),
 			}
 		}
@@ -109,11 +124,10 @@ func processCSV(file string) map[string]registration {
 				string(reg[len(reg)-2]),
 				string(reg[len(reg)-1]),
 				string(reg[2]) == "Non-Federal Agency",
-				time.Now(),
+				regUpdate,
 				time.Now(),
 			}
 		}
-
 	}
 
 	return registrations
