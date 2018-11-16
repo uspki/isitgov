@@ -11,8 +11,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -20,24 +23,35 @@ import (
 )
 
 type registration struct {
-	domainName   string
-	domainType   string
-	agency       string
-	organization string
-	city         string
-	state        string
-	isStateLcl   bool
-	createdDate  time.Time
-	lastUpdate   time.Time
+	DomainName   string
+	DomainType   string
+	Agency       string
+	Organization string
+	City         string
+	State        string
+	IsStateLcl   bool
+	CreatedDate  time.Time
+	LastUpdate   time.Time
 }
 
+var regs = make(map[string]registration)
+var initialized bool
+
 func main() {
+	initialized = false
 	url := "https://raw.githubusercontent.com/GSA/data/master/dotgov-domains/current-full.csv"
 
-	registrations := processCSV(fetchList(url))
+	regs = processCSV(fetchList(url))
 
-	fmt.Println(registrations[strings.ToUpper("lbl.gov")].isStateLcl)
+	if len(regs) != 0 {
+		initialized = true
+	}
 
+	router := mux.NewRouter()
+	router.HandleFunc("/registrations", getRegs).Methods("GET")
+	router.HandleFunc("/registrations/{domain}", getRegDomain).Methods("GET")
+	router.HandleFunc("/isStateLocal/{domain}", isStateLocal).Methods("GET")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func fetchList(url string) string {
@@ -61,8 +75,8 @@ func processCSV(file string) map[string]registration {
 
 	registrations := make(map[string]registration)
 
-	//remove leading/trailing whitespaces from CSV and split by lines
-	lines := strings.Split(strings.TrimSpace(file), "\n")
+	//remove leading/trailing whitespaces and CRs from CSV and split by lines
+	lines := strings.Split(strings.TrimSpace(strings.Replace(file, "\r", "", -1)), "\n")
 
 	for i := 1; i < len(lines); i++ {
 		reg := strings.Split(lines[i], ",")
@@ -102,4 +116,18 @@ func processCSV(file string) map[string]registration {
 	}
 
 	return registrations
+}
+
+func isStateLocal(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	json.NewEncoder(w).Encode(regs[strings.ToUpper(params["domain"])].IsStateLcl)
+}
+
+func getRegs(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(regs)
+}
+
+func getRegDomain(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	json.NewEncoder(w).Encode(regs[strings.ToUpper(params["domain"])])
 }
