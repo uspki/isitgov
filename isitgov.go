@@ -34,6 +34,13 @@ type registration struct {
 func main() {
 	url := "https://raw.githubusercontent.com/GSA/data/master/dotgov-domains/current-full.csv"
 
+	registrations := processCSV(fetchList(url))
+
+	fmt.Println(registrations[strings.ToUpper("lbl.gov")].isStateLcl)
+
+}
+
+func fetchList(url string) string {
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
@@ -47,10 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	registrations := processCSV(string(body))
-
-	fmt.Println(registrations[strings.ToUpper("lbl.gov")].isStateLcl)
-
+	return string(body)
 }
 
 func processCSV(file string) map[string]registration {
