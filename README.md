@@ -1,7 +1,7 @@
 # isitgov 
 is a simple RESTful server that polls the registration information on home.dotgov.gov/data periodically and provides REST interfaces (binding to :8080) to obtain information for all .gov domain registrations, a single registration (using the domain name as a key) or to determine if a domain is owned by the Federal Government or by State/Local Government.
 
-To build this project, make sure you have a current version of Golang installed and configured, `cd $GOPATH`, `go get github.com/jbreyer/isitgov`, `cd $GOPATH/src/github.com/jbreyer/isitgov` and finally build the binary with `go get ./...`
+To build this project, make sure you have a current version of Golang installed and configured, `cd $GOPATH`, `go get github.com/uspki/isitgov`, `cd $GOPATH/src/github.com/uspki/isitgov` and finally build the binary with `go get ./...`
 
 If you encounter any dependency errors, manually run `go get github.com/gorilla/mux` and those issues should be resolved.
 
