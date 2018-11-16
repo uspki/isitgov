@@ -1,10 +1,9 @@
 /******************************************************************************
 * Author:            jbreyer
 * Date:              15 NOV 2018
-* Purpose:           Presents a hashmap of dotgov.gov registrations as a web
+* Purpose:           Presents a map of dotgov.gov registrations as a web
 *                    service.  Registrations are updated every 14 days,
-*                    coinciding with the registrations being updated.
-*
+*                    matching the frequency of registration file updates.
 ******************************************************************************/
 
 package main
