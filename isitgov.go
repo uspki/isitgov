@@ -27,6 +27,7 @@ type registration struct {
 	Organization string
 	City         string
 	State        string
+	SecurityPOC  string
 	IsStateLcl   bool
 	CreatedDate  time.Time
 	LastUpdate   time.Time
@@ -97,7 +98,7 @@ func processCSV(file string) map[string]registration {
 		}
 
 		//most organizations aren't compounds
-		if len(reg) == 6 {
+		if len(reg) == 7 {
 			registrations[string(reg[0])] = registration{
 				string(reg[0]),
 				string(reg[1]),
@@ -105,6 +106,7 @@ func processCSV(file string) map[string]registration {
 				string(reg[3]),
 				string(reg[4]),
 				string(reg[5]),
+				string(reg[6]),
 				string(reg[2]) == "Non-Federal Agency",
 				regUpdate,
 				time.Now(),
@@ -113,13 +115,14 @@ func processCSV(file string) map[string]registration {
 
 		//orgs that are compounds are wrapped in double quotes but strings.split doesn't care about that
 		//so we have to separately split the string on double quotes
-		if len(reg) != 6 {
+		if len(reg) != 7 {
 			org := strings.Split(lines[i], "\"")
 			registrations[string(reg[0])] = registration{
 				string(reg[0]),
 				string(reg[1]),
 				string(reg[2]),
 				org[1],
+				string(reg[len(reg)-3]),
 				string(reg[len(reg)-2]),
 				string(reg[len(reg)-1]),
 				string(reg[2]) == "Non-Federal Agency",
